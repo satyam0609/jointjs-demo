@@ -352,7 +352,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="h-screen w-screen overflow-hidden bg-linear-to-br from-slate-50 to-slate-100">
       {/* Sidebar */}
       <div className="absolute top-1/2 left-6 -translate-y-1/2 bg-white shadow-lg border border-slate-200 p-4 rounded-2xl flex flex-col gap-2 z-50">
         <button
