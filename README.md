@@ -266,6 +266,8 @@ export default function Home() {
 }
 ```
 
+### To change the label double click on any label and prompt will open, then change the label
+
 ## 9️⃣ Demo & Features
 
 - ✅ Drag shapes from the sidebar to paper
