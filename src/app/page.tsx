@@ -355,10 +355,8 @@ export default function Home() {
     <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Sidebar */}
       <div className="absolute top-1/2 left-6 -translate-y-1/2 bg-white shadow-lg border border-slate-200 p-4 rounded-2xl flex flex-col gap-2 z-50">
-        <p className="text-xs font-semibold text-slate-600 px-2 mb-1">Shapes</p>
-
         <button
-          className="p-3 rounded-lg hover:bg-blue-50 transition-colors group"
+          className="p-3 rounded-lg hover:bg-blue-50 transition-colors group flex-0"
           draggable
           onDragStart={(e) => onDragStart(e, "rectangle")}
           title="Rectangle"
