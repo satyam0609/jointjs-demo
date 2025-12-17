@@ -174,6 +174,7 @@ export default function DaigramBuilder() {
 
       linkView.addTools(toolsView);
     });
+
     paper.on("link:mouseleave", () => {
       paper.removeTools();
     });

@@ -85,6 +85,67 @@ export default function DaigramBuilder() {
   //   }
   // };
 
+  // function measureTextWidth(
+  //   text: string,
+  //   font = "bold 12px Inter, sans-serif"
+  // ) {
+  //   const canvas = document.createElement("canvas");
+  //   const ctx = canvas.getContext("2d")!;
+  //   ctx.font = font;
+  //   return ctx.measureText(text || " ").width;
+  // }
+
+  // const saveLabel = (
+  //   value: string,
+  //   cellView: any,
+  //   labelIndex: number,
+  //   isLink: boolean
+  // ) => {
+  //   const model = cellView.model;
+
+  //   if (isLink) {
+  //     const textWidth = measureTextWidth(value);
+
+  //     model.label(labelIndex, {
+  //       attrs: {
+  //         labelText: {
+  //           text: value,
+  //           fontSize: 12,
+  //           fill: "#000000",
+  //           // textAnchor: "middle",
+  //           // textVerticalAnchor: "middle",
+  //           // width: textWidth,
+  //         },
+  //         labelBody: {
+  //           ref: "labelText",
+  //           // center rect around text with padding
+  //           x: `calc(x-${textWidth / 2 - 6})`,
+  //           y: "calc(y-2)",
+  //           width: textWidth + 8,
+  //           height: "calc(h+4)",
+  //           fill: "#ffffff",
+  //           stroke: "#000000",
+  //           strokeWidth: 1,
+  //           rx: 4,
+  //           ry: 4,
+  //         },
+  //       },
+  //     });
+  //   } else {
+  //     // element logic as you have
+  //     model.attr("label/text", value);
+  //     model.attr("label/textWrap", {
+  //       width: -10, // Negative value means percentage (90% of shape width)
+  //       height: -10, // 90% of shape height
+  //       ellipsis: false, // Don't show ellipsis
+  //     });
+  //     model.attr("label/style", {
+  //       overflow: "hidden",
+  //       textOverflow: "clip",
+  //     });
+  //   }
+  // };
+
   function measureTextWidth(
     text: string,
     font = "bold 12px Inter, sans-serif"
@@ -105,39 +166,26 @@ export default function DaigramBuilder() {
 
     if (isLink) {
       const textWidth = measureTextWidth(value);
+      const paddingX = 16; // total horizontal padding
+      const paddingY = 8; // total vertical padding
+      const lineHeight = 16; // approx for fontSize 12
 
       model.label(labelIndex, {
+        size: {
+          width: textWidth + paddingX,
+          height: lineHeight + paddingY,
+        },
         attrs: {
-          labelText: {
-            text: value,
-            fontSize: 12,
-            fill: "#000000",
-            // textAnchor: "middle",
-            // textVerticalAnchor: "middle",
-            // width: textWidth,
-          },
-          labelBody: {
-            ref: "labelText",
-            // center rect around text with padding
-            x: `calc(x-${textWidth / 2 - 6})`,
-            y: "calc(y-2)",
-            width: textWidth + 8,
-            height: "calc(h+4)",
-            fill: "#ffffff",
-            stroke: "#000000",
-            strokeWidth: 1,
-            rx: 4,
-            ry: 4,
-          },
+          // must match selector name in markup
+          labelText: { text: value },
         },
       });
     } else {
-      // element logic as you have
       model.attr("label/text", value);
       model.attr("label/textWrap", {
-        width: -10, // Negative value means percentage (90% of shape width)
-        height: -10, // 90% of shape height
-        ellipsis: false, // Don't show ellipsis
+        width: -10,
+        height: -10,
+        ellipsis: false,
       });
       model.attr("label/style", {
         overflow: "hidden",
@@ -860,31 +908,61 @@ export default function DaigramBuilder() {
         //   },
         // });
 
+        // link.appendLabel({
+        //   position: { distance: 0.5 },
+        //   markup: [
+        //     { tagName: "rect", selector: "labelBody" },
+        //     { tagName: "text", selector: "labelText" },
+        //   ],
+        //   attrs: {
+        //     labelText: {
+        //       text: "Link",
+        //       fontSize: 12,
+        //       fill: "#000000",
+        //       textAnchor: "middle",
+        //       textVerticalAnchor: "middle",
+        //     },
+        //     labelBody: {
+        //       ref: "labelText",
+        //       x: "calc(x - 4)", // simple padding
+        //       y: "calc(y - 2)",
+        //       width: "calc(w + 8)", // grow with text
+        //       height: "calc(h + 4)",
+        //       fill: "#ffffff",
+        //       stroke: "#000000",
+        //       strokeWidth: 1,
+        //       rx: 4,
+        //       ry: 4,
+        //     },
+        //   },
+        // });
+
         link.appendLabel({
           position: { distance: 0.5 },
+          size: { width: 60, height: 24 }, // initial
           markup: [
             { tagName: "rect", selector: "labelBody" },
             { tagName: "text", selector: "labelText" },
           ],
           attrs: {
-            labelText: {
-              text: "Link",
-              fontSize: 12,
-              fill: "#000000",
-              textAnchor: "middle",
-              textVerticalAnchor: "middle",
-            },
             labelBody: {
-              ref: "labelText",
-              x: "calc(x - 4)", // simple padding
-              y: "calc(y - 2)",
-              width: "calc(w + 8)", // grow with text
-              height: "calc(h + 4)",
+              // center rect around label origin
+              width: "calc(w)",
+              height: "calc(h)",
+              x: "calc(w/-2)",
+              y: "calc(h/-2)",
               fill: "#ffffff",
               stroke: "#000000",
               strokeWidth: 1,
               rx: 4,
               ry: 4,
+            },
+            labelText: {
+              text: "Link",
+              fill: "#000000",
+              fontSize: 12,
+              textAnchor: "middle",
+              textVerticalAnchor: "middle",
             },
           },
         });
