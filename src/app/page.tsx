@@ -17,14 +17,7 @@ export default function Home() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [editing, setEditing] = React.useState<{
-    view: joint.dia.ElementView | null;
-    value: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
+  const [editing, setEditing] = React.useState<any>(null);
 
   // Color scheme for classy design
   const colors = {
@@ -263,12 +256,12 @@ export default function Home() {
         },
       },
     ],
-    getPosition: function (view) {
+    getPosition: function (view: any) {
       const model = view.model;
       const { width, height } = model.size();
       return { x: width, y: height };
     },
-    setPosition: function (view, coordinates) {
+    setPosition: function (view: any, coordinates: any) {
       const model = view.model;
       model.resize(
         Math.max(coordinates.x - 10, 1),

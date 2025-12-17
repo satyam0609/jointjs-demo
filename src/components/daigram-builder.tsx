@@ -577,15 +577,6 @@ export default function DaigramBuilder() {
   const shapeTypesRef = useRef<Map<string, string>>(new Map());
   const selectionRef = useRef<joint.dia.Element | null>(null);
 
-  const [editing, setEditing] = React.useState<{
-    view: joint.dia.ElementView | null;
-    value: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
-
   // Color scheme for classy design
   const colors = {
     rectangle: {
@@ -658,7 +649,7 @@ export default function DaigramBuilder() {
     });
     paperInstanceRef.current = paper;
 
-    paperInstanceRef.current.on("element:pointerdown", (view) => {
+    paperInstanceRef.current.on("element:pointerdown", (view: any) => {
       selectElement(view);
     });
 
@@ -666,7 +657,7 @@ export default function DaigramBuilder() {
       clearSelection();
     });
 
-    paperInstanceRef.current.on("link:connect", (linkView) => {
+    paperInstanceRef.current.on("link:connect", (linkView: any) => {
       if (!linkView.model.getTargetCell()) {
         linkView.model.remove();
       }
@@ -1191,7 +1182,7 @@ export default function DaigramBuilder() {
         },
       ],
 
-      getPosition(view) {
+      getPosition(view: any) {
         const { width, height } = view.model.size();
 
         const positions: Record<string, any> = {
@@ -1208,7 +1199,7 @@ export default function DaigramBuilder() {
         return positions[direction];
       },
 
-      setPosition(view, coords) {
+      setPosition(view: any, coords: any) {
         const model = view.model;
         const minSize = 40;
 

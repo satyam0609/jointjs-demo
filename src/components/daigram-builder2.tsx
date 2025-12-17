@@ -1240,15 +1240,6 @@ export default function DaigramBuilder() {
   const linkInProgressRef = useRef<joint.dia.Link | null>(null);
   const isCreatingLinkRef = useRef(false);
 
-  const [editing, setEditing] = React.useState<{
-    view: joint.dia.ElementView | null;
-    value: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
-
   // Color scheme for classy design
   const colors = {
     rectangle: {
@@ -1360,7 +1351,7 @@ export default function DaigramBuilder() {
       linkView.removeTools();
     });
 
-    paperInstanceRef.current.on("element:pointerdown", (view) => {
+    paperInstanceRef.current.on("element:pointerdown", (view: any) => {
       selectElement(view);
     });
 
@@ -1368,7 +1359,7 @@ export default function DaigramBuilder() {
       clearSelection();
     });
 
-    paperInstanceRef.current.on("link:connect", (linkView) => {
+    paperInstanceRef.current.on("link:connect", (linkView: any) => {
       if (!linkView.model.getTargetCell()) {
         linkView.model.remove();
       }
@@ -1650,7 +1641,14 @@ export default function DaigramBuilder() {
 
   function autoAnchorName(
     el: any,
-    referenceBBox: { x: number; y: number; width: number; height: number }
+    referenceBBox: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      cx: number;
+      cy: number;
+    }
   ): string {
     const bbox = el.model ? el.model.getBBox() : el.getBBox();
 
@@ -1770,7 +1768,7 @@ export default function DaigramBuilder() {
           linkInProgressRef.current.target(p);
 
           const views = paper.findViewsFromPoint(p);
-          const elementView = views.find((v) => v.model.isElement) as
+          const elementView = views.find((v: any) => v.model.isElement) as
             | joint.dia.ElementView
             | undefined;
 
@@ -1802,7 +1800,7 @@ export default function DaigramBuilder() {
           });
 
           const views = paper.findViewsFromPoint(p);
-          const targetView = views.find((v) => v.model.isElement) as
+          const targetView = views.find((v: any) => v.model.isElement) as
             | joint.dia.ElementView
             | undefined;
 
@@ -1811,7 +1809,7 @@ export default function DaigramBuilder() {
             lastHighlightedView = null;
           }
 
-          const sourceEl = view.model;
+          const sourceEl: any = view.model;
 
           if (!targetView) {
             linkInProgressRef.current.remove();
@@ -1819,7 +1817,7 @@ export default function DaigramBuilder() {
             return;
           }
 
-          const targetEl = targetView.model;
+          const targetEl: any = targetView.model;
 
           if (targetEl.id === sourceEl.id) {
             const bbox = sourceEl.getBBox();
@@ -1888,7 +1886,7 @@ export default function DaigramBuilder() {
         },
       ],
 
-      getPosition(view) {
+      getPosition(view: any) {
         const { width, height } = view.model.size();
 
         const positions: Record<string, any> = {
@@ -1905,7 +1903,7 @@ export default function DaigramBuilder() {
         return positions[direction];
       },
 
-      setPosition(view, coords) {
+      setPosition(view: any, coords: any) {
         const model = view.model;
         const minSize = 40;
 
