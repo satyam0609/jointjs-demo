@@ -7,14 +7,24 @@ import {
   DiamondIcon,
   TriangleIcon,
 } from "lucide-react";
+import DaigramBuilder from "@/components/daigram-builder";
+import DaigramBuilder2 from "@/components/daigram-builder3";
 
 export default function Home() {
   const paperRef = useRef<HTMLDivElement | null>(null);
   const graphRef = useRef<any>(null);
   const paperInstanceRef = useRef<any>(null);
 
-  const [dragType, setDragType] = React.useState<string | null>(null);
-  const [linkSource, setLinkSource] = React.useState<any>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const [editing, setEditing] = React.useState<{
+    view: joint.dia.ElementView | null;
+    value: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   // Color scheme for classy design
   const colors = {
@@ -39,6 +49,80 @@ export default function Home() {
       shadow: "0 4px 12px rgba(147, 51, 234, 0.3)",
     },
   };
+
+  const openLabelEditor = (
+    view: joint.dia.ElementView | joint.dia.LinkView,
+    paper: joint.dia.Paper
+  ) => {
+    const model = view.model;
+
+    const text = model.isLink()
+      ? model.label(0)?.attrs?.text?.text || ""
+      : model.attr("label/text") || "";
+
+    const labelEl = view.el.querySelector(
+      ".joint-label"
+    ) as SVGTextElement | null;
+
+    if (!labelEl) return;
+
+    const bbox = labelEl.getBBox();
+    const paperRect = paper.el.getBoundingClientRect();
+
+    setEditing({
+      view,
+      value: text,
+      x: paperRect.left + bbox.x,
+      y: paperRect.top + bbox.y,
+      width: Math.max(bbox.width + 20, 60),
+      height: Math.max(bbox.height + 10, 24),
+    });
+
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+  };
+  const saveLabel = () => {
+    if (!editing) return;
+
+    const model = editing.view?.model;
+
+    if (!model) return;
+
+    if (model.isLink()) {
+      if (model.labels().length === 0) {
+        model.appendLabel({
+          attrs: {
+            text: {
+              text: editing.value,
+              fill: "#374151",
+              fontSize: 12,
+              fontWeight: "bold",
+            },
+          },
+          position: 0.5,
+        });
+      } else {
+        model.label(0, {
+          attrs: {
+            text: {
+              text: editing.value,
+              fill: "#374151",
+              fontSize: 12,
+              fontWeight: "bold",
+            },
+          },
+        });
+      }
+    } else {
+      model.attr("label/text", editing.value);
+    }
+
+    setEditing(null);
+  };
+
+  const cancelLabel = () => setEditing(null);
 
   // Initialize Paper & Graph
   useEffect(() => {
@@ -82,16 +166,10 @@ export default function Home() {
       snapLinks: { radius: 20 },
       linkPinning: false,
       markAvailable: true,
+      drawGrid: true,
+      gridSize: 10,
     });
     paperInstanceRef.current = paper;
-
-    paper.on("element:mouseenter", (elementView: joint.dia.ElementView) => {
-      elementView.hideTools();
-    });
-
-    paper.on("element:mouseleave", (elementView: joint.dia.ElementView) => {
-      elementView.showTools();
-    });
 
     // Double-click to edit label
     paperInstanceRef.current.on("element:pointerdblclick", (cellView: any) => {
@@ -101,6 +179,12 @@ export default function Home() {
         cellView.model.attr("label/text", newText);
       }
     });
+
+    // paper.on("element:pointerdblclick", (view, evt) => {
+    //   if ((evt.target as SVGElement)?.classList.contains("joint-label")) {
+    //     openLabelEditor(view, paper);
+    //   }
+    // });
 
     paperInstanceRef.current.on("link:pointerdblclick", (linkView: any) => {
       const link = linkView.model as joint.dia.Link;
@@ -135,6 +219,10 @@ export default function Home() {
       }
     });
 
+    paperInstanceRef.current.on("blank:pointerdown", () => {
+      if (editing) saveLabel();
+    });
+
     // Drag and drop
     el.addEventListener("dragover", (e) => e.preventDefault());
     el.addEventListener("drop", handleDrop);
@@ -143,10 +231,51 @@ export default function Home() {
     const handleResize = () => {
       paper.setDimensions(el.clientWidth, el.clientHeight);
     };
+
     window.addEventListener("resize", handleResize);
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const ResizeTool = joint.elementTools.Control.extend({
+    children: [
+      {
+        tagName: "image",
+        selector: "handle",
+        attributes: {
+          cursor: "pointer",
+          width: 20,
+          height: 20,
+          "xlink:href":
+            "https://assets.codepen.io/7589991/8725981_image_resize_square_icon.svg",
+        },
+      },
+      {
+        tagName: "rect",
+        selector: "extras",
+        attributes: {
+          "pointer-events": "none",
+          fill: "none",
+          stroke: "#33334F",
+          "stroke-dasharray": "2,4",
+          rx: 5,
+          ry: 5,
+        },
+      },
+    ],
+    getPosition: function (view) {
+      const model = view.model;
+      const { width, height } = model.size();
+      return { x: width, y: height };
+    },
+    setPosition: function (view, coordinates) {
+      const model = view.model;
+      model.resize(
+        Math.max(coordinates.x - 10, 1),
+        Math.max(coordinates.y - 10, 1)
+      );
+    },
+  });
 
   // Handle Drop Event
   const handleDrop = (e: DragEvent) => {
@@ -263,7 +392,7 @@ export default function Home() {
 
       case "circle":
         shapeColor = colors.circle;
-        shape = new joint.shapes.standard.Circle({
+        shape = new joint.shapes.standard.Ellipse({
           position: { x, y },
           size: { width: 90, height: 90 },
           attrs: {
@@ -344,6 +473,15 @@ export default function Home() {
 
     graphRef.current.addCell(shape);
     addPorts(shape);
+    shape.findView(paperInstanceRef.current).addTools(
+      new joint.dia.ToolsView({
+        tools: [
+          new ResizeTool({
+            selector: "body",
+          }),
+        ],
+      })
+    );
   };
 
   // Drag Start from Sidebar
@@ -353,8 +491,7 @@ export default function Home() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-linear-to-br from-slate-50 to-slate-100">
-      {/* Sidebar */}
-      <div className="absolute top-1/2 left-6 -translate-y-1/2 bg-white shadow-lg border border-slate-200 p-4 rounded-2xl flex flex-col gap-2 z-50">
+      {/* <div className="absolute top-1/2 left-6 -translate-y-1/2 bg-white shadow-lg border border-slate-200 p-4 rounded-2xl flex flex-col gap-2 z-50">
         <button
           className="p-3 rounded-lg hover:bg-blue-50 transition-colors group flex-0"
           draggable
@@ -392,7 +529,6 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Paper */}
       <div
         ref={paperRef}
         style={{
@@ -402,6 +538,34 @@ export default function Home() {
           overflow: "hidden",
         }}
       ></div>
+      {editing && (
+        <input
+          ref={inputRef}
+          value={editing.value}
+          onChange={(e) => setEditing({ ...editing, value: e.target.value })}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") saveLabel();
+            if (e.key === "Escape") cancelLabel();
+          }}
+          style={{
+            position: "fixed",
+            left: editing.x,
+            top: editing.y,
+            width: editing.width,
+            height: editing.height,
+            fontSize: 13,
+            fontFamily: "Inter, sans-serif",
+            textAlign: "center",
+            border: "1px solid #3b82f6",
+            borderRadius: 6,
+            padding: "2px 6px",
+            zIndex: 1000,
+            outline: "none",
+          }}
+        />
+      )} */}
+
+      <DaigramBuilder2 />
     </div>
   );
 }
