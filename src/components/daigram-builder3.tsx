@@ -17,6 +17,64 @@ export default function DaigramBuilder() {
   const linkInProgressRef = useRef<joint.dia.Link | null>(null);
   const isCreatingLinkRef = useRef(false);
 
+  const editorRef = useRef<any>(null);
+  const [labelEditor, setLabelEditor] = React.useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    value: string;
+    cellView: any;
+    labelIndex: number;
+    isLink: boolean;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    width: 140,
+    height: 40,
+    value: "",
+    cellView: null,
+    labelIndex: 0,
+    isLink: false,
+  });
+
+  const debounceRef = useRef<any>(null);
+
+  const debouncedSave = (
+    value: string,
+    cellView: any,
+    labelIndex: number,
+    isLink: boolean
+  ) => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      saveLabel(value, cellView, labelIndex, isLink);
+    }, 300);
+  };
+
+  const saveLabel = (
+    value: string,
+    cellView: any,
+    labelIndex: number,
+    isLink: boolean
+  ) => {
+    if (!value.trim()) return;
+
+    const model = cellView.model;
+
+    if (isLink) {
+      model.label(labelIndex, {
+        attrs: {
+          text: { text: value },
+        },
+      });
+    } else {
+      model.attr("label/text", value);
+    }
+  };
+
   // Color scheme for classy design
   const colors = {
     rectangle: {
@@ -40,6 +98,13 @@ export default function DaigramBuilder() {
       shadow: "0 4px 12px rgba(147, 51, 234, 0.3)",
     },
   };
+
+  useEffect(() => {
+    if (labelEditor.visible && editorRef.current) {
+      editorRef.current.focus();
+      editorRef.current.select();
+    }
+  }, [labelEditor.visible]);
 
   // Initialize Paper & Graph
   useEffect(() => {
@@ -71,8 +136,8 @@ export default function DaigramBuilder() {
         }),
 
       interactive: true,
-      drawGrid: true,
-      gridSize: 10,
+      // drawGrid: true,
+      // gridSize: 10,
     });
     paperInstanceRef.current = paper;
 
@@ -133,46 +198,84 @@ export default function DaigramBuilder() {
     // });
 
     // Double-click element to edit label
-    paper.on("element:pointerdblclick", (cellView: joint.dia.ElementView) => {
-      const currentText = cellView.model.attr("label/text") || "";
-      const newText = prompt("Edit label:", currentText);
-      if (newText !== null && newText !== undefined) {
-        cellView.model.attr("label/text", newText);
-      }
-    });
+    // paper.on("element:pointerdblclick", (cellView: joint.dia.ElementView) => {
+    //   const currentText = cellView.model.attr("label/text") || "";
+    //   const newText = prompt("Edit label:", currentText);
+    //   if (newText !== null && newText !== undefined) {
+    //     cellView.model.attr("label/text", newText);
+    //   }
+    // });
 
     // Double-click link to edit label
-    paperInstanceRef.current.on("link:pointerdblclick", (linkView: any) => {
-      console.log("triggering...........");
-      const link = linkView.model as joint.dia.Link;
-      const currentText = link.label(0)?.attrs?.text?.text || "";
+    // paperInstanceRef.current.on("link:pointerdblclick", (linkView: any) => {
+    //   console.log("triggering...........");
+    //   const link = linkView.model as joint.dia.Link;
+    //   const currentText = link.label(0)?.attrs?.text?.text || "";
 
-      const newText = prompt("Edit link label:", currentText);
-      if (newText !== null) {
-        if (link.labels().length === 0) {
-          link.appendLabel({
-            attrs: {
-              text: {
-                text: newText,
-                fill: "#374151",
-                fontSize: 12,
-                fontWeight: "bold",
-              },
-            },
-            position: 0.5,
-          });
-        } else {
-          link.label(0, {
-            attrs: {
-              text: {
-                text: newText,
-                fill: "#374151",
-                fontSize: 12,
-                fontWeight: "bold",
-              },
-            },
-          });
-        }
+    //   const newText = prompt("Edit link label:", currentText);
+    //   if (newText !== null) {
+    //     if (link.labels().length === 0) {
+    //       link.appendLabel({
+    //         attrs: {
+    //           text: {
+    //             text: newText,
+    //             fill: "#374151",
+    //             fontSize: 12,
+    //             fontWeight: "bold",
+    //           },
+    //         },
+    //         position: 0.5,
+    //       });
+    //     } else {
+    //       link.label(0, {
+    //         attrs: {
+    //           text: {
+    //             text: newText,
+    //             fill: "#374151",
+    //             fontSize: 12,
+    //             fontWeight: "bold",
+    //           },
+    //         },
+    //       });
+    //     }
+    //   }
+    // });
+
+    //Double click
+
+    paper.on("cell:pointerdblclick", (cellView: any, evt: any) => {
+      evt.stopPropagation();
+
+      // ============================
+      // ELEMENT LABEL
+      // ============================
+      if (cellView.model.isElement()) {
+        const rawTarget = evt.target as SVGElement;
+        const textEl: any =
+          rawTarget.tagName === "text" ? rawTarget : rawTarget.closest("text");
+
+        if (!textEl) return;
+
+        openLabelEditor(cellView, textEl, 0);
+        return;
+      }
+
+      // ============================
+      // LINK LABEL
+      // ============================
+      if (cellView.model.isLink()) {
+        const linkView = cellView as joint.dia.LinkView;
+
+        // Get actual label <text> nodes
+        const labelTextEls = linkView.el.querySelectorAll("text");
+
+        if (!labelTextEls.length) return;
+
+        // Default to first label (or detect nearest later)
+        const textEl = labelTextEls[0] as SVGTextElement;
+        const labelIndex = Number(textEl.getAttribute("data-label-index") || 0);
+
+        openLabelEditor(cellView, textEl, labelIndex);
       }
     });
 
@@ -192,6 +295,26 @@ export default function DaigramBuilder() {
       el.removeEventListener("drop", handleDrop);
     };
   }, []);
+
+  function openLabelEditor(
+    cellView: any,
+    textEl: SVGTextElement,
+    labelIndex: number
+  ) {
+    const bbox = textEl.getBoundingClientRect();
+
+    setLabelEditor({
+      visible: true,
+      x: bbox.left,
+      y: bbox.top,
+      width: Math.max(140, bbox.width + 20),
+      height: Math.max(40, bbox.height + 20),
+      value: textEl.textContent || "",
+      cellView,
+      labelIndex,
+      isLink: cellView.model.isLink(),
+    });
+  }
 
   // Handle Drop Event
   const handleDrop = (e: DragEvent) => {
@@ -293,6 +416,7 @@ export default function DaigramBuilder() {
               rx: 8,
               ry: 8,
               magnet: "passive",
+
               filter: {
                 name: "dropShadow",
                 args: { dx: 0, dy: 2, blur: 4, opacity: 0.2 },
@@ -304,6 +428,7 @@ export default function DaigramBuilder() {
               fontSize: 13,
               fontWeight: "bold",
               fontFamily: "Inter, sans-serif",
+              "data-label-index": 0,
             },
           },
         });
@@ -331,6 +456,7 @@ export default function DaigramBuilder() {
               fontSize: 13,
               fontWeight: "bold",
               fontFamily: "Inter, sans-serif",
+              "data-label-index": 0,
             },
           },
         });
@@ -359,6 +485,7 @@ export default function DaigramBuilder() {
               fontSize: 13,
               fontWeight: "bold",
               fontFamily: "Inter, sans-serif",
+              "data-label-index": 0,
             },
           },
         });
@@ -386,6 +513,7 @@ export default function DaigramBuilder() {
               fontSize: 13,
               fontWeight: "bold",
               fontFamily: "Inter, sans-serif",
+              "data-label-index": 0,
             },
           },
         });
@@ -412,13 +540,6 @@ export default function DaigramBuilder() {
   };
 
   // Tool helpers
-  function addLinkTool(view: joint.dia.ElementView) {
-    const toolsView = new joint.dia.ToolsView({
-      tools: [createLinkTool()],
-    });
-
-    view.addTools(toolsView);
-  }
 
   function removeTools(view: joint.dia.ElementView) {
     view.removeTools();
@@ -525,6 +646,7 @@ export default function DaigramBuilder() {
               fill: "#000",
               fontSize: 12,
               fontWeight: "bold",
+              "data-label-index": 0,
             },
             rect: {
               fill: "#fff",
@@ -826,6 +948,59 @@ export default function DaigramBuilder() {
           overflow: "hidden",
         }}
       ></div>
+      {labelEditor.visible && (
+        <textarea
+          ref={editorRef}
+          value={labelEditor.value}
+          onChange={(e) => {
+            setLabelEditor((p) => ({ ...p, value: e.target.value }));
+            debouncedSave(
+              e.target.value,
+              labelEditor.cellView,
+              labelEditor.labelIndex,
+              labelEditor.isLink
+            );
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              saveLabel(
+                labelEditor.value,
+                labelEditor.cellView,
+                labelEditor.labelIndex,
+                labelEditor.isLink
+              );
+              setLabelEditor((p) => ({ ...p, visible: false }));
+            }
+          }}
+          onBlur={() => {
+            saveLabel(
+              labelEditor.value,
+              labelEditor.cellView,
+              labelEditor.labelIndex,
+              labelEditor.isLink
+            );
+            setLabelEditor((p) => ({ ...p, visible: false }));
+          }}
+          style={{
+            position: "fixed",
+            left: labelEditor.x,
+            top: labelEditor.y,
+            width: labelEditor.width,
+            height: labelEditor.height,
+            resize: "none",
+            padding: "6px",
+            fontSize: "13px",
+            fontFamily: "Inter, sans-serif",
+            lineHeight: "1.3",
+            zIndex: 9999,
+            borderRadius: 6,
+            border: "1px solid #cbd5f5",
+            outline: "none",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+          }}
+        />
+      )}
     </div>
   );
 }

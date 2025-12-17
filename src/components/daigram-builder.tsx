@@ -644,8 +644,8 @@ export default function DaigramBuilder() {
       //     addLinkFromMagnet: (evt as any).type === "pointerdown" ? false : true,
       //   };
       // },
-      drawGrid: true,
-      gridSize: 10,
+      // drawGrid: true,
+      // gridSize: 10,
     });
     paperInstanceRef.current = paper;
 
