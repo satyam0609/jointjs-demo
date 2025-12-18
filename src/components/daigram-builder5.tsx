@@ -400,9 +400,16 @@ export default function DaigramBuilder() {
     //   }
     // });
 
-    const linkConfig = function (side1, side2, x, y, h, w) {
+    const linkConfig = function (
+      side1: string,
+      side2: string,
+      x: number,
+      y: number,
+      h: number,
+      w: number
+    ) {
       // Helper function to create consistent point objects
-      function point(x, y) {
+      function point(x: number, y: number) {
         return { x, y };
       }
 
@@ -432,12 +439,14 @@ export default function DaigramBuilder() {
         (side1 === "top" || side1 === "bottom") &&
         (side2 === "left" || side2 === "right")
       ) {
-        const vOffset = side1 === "top" ? y - 40 : y + h + 40;
+        let vOffset = side1 === "top" ? y - 40 : y + h + 40;
         const hOffset = side2 === "left" ? x - 40 : x + w + 40;
+        // vOffset = side1 === "top" ? vOffset : vOffset + h;
+
         return [
           point(x + w / 2, vOffset),
-          point(hOffset, y - 40),
-          point(hOffset, y - 40),
+          point(hOffset, vOffset),
+          point(hOffset, y + h / 2),
         ];
       }
 
