@@ -455,21 +455,35 @@ export default function DaigramBuilder() {
         (side1 === "top" || side1 === "bottom") &&
         (side2 === "top" || side2 === "bottom")
       ) {
-        return [
-          point(x + w / 2, y - 40),
-          point(x - 40, y - 40),
-          point(x - 40, y + h + 40),
-          point(x + w / 2, y + h + 40),
-        ];
+        return side1 === "top"
+          ? [
+              point(x + w / 2, y - 40),
+              point(x - 40, y - 40),
+              point(x - 40, y + h + 40),
+              point(x + w / 2, y + h + 40),
+            ]
+          : [
+              point(x + w / 2, y + h + 40),
+              point(x - 40, y + h + 40),
+              point(x - 40, y - 40),
+              point(x + w / 2, y - 40),
+            ];
       }
 
       // Default fallback: horizontal source pattern
-      return [
-        point(x - 40, y + h / 2),
-        point(x - 40, y + h + 40),
-        point(x + w + 40, y + h + 40),
-        point(x + w + 40, y + h / 2),
-      ];
+      return side1 === "left"
+        ? [
+            point(x - 40, y + h / 2),
+            point(x - 40, y + h + 40),
+            point(x + w + 40, y + h + 40),
+            point(x + w + 40, y + h / 2),
+          ]
+        : [
+            point(x + w + 40, y + h / 2),
+            point(x + w + 40, y + h + 40),
+            point(x - 40, y + h + 40),
+            point(x - 40, y + h / 2),
+          ];
     };
 
     graph.on("change:target change:source", (link: joint.dia.Link) => {
